@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.20.3
 
 # Setup document root
 WORKDIR /var/www/html
@@ -6,6 +6,7 @@ WORKDIR /var/www/html
 # Install packages and remove default server definition
 RUN apk add --no-cache \
   curl \
+  imagemagick \
   nginx \
   php83 \
   php83-ctype \
@@ -25,6 +26,7 @@ RUN apk add --no-cache \
   php83-xml \
   php83-xmlreader \
   php83-xmlwriter \
+  php83-pecl-imagick \
   php83-pcntl \
   php83-redis \
   php83-zip \
@@ -32,46 +34,74 @@ RUN apk add --no-cache \
   php83-bcmath \
   php83-sockets \
   php83-intl \
+  php83-cli \
   supervisor \
-  imagemagick \
-  git \
-  gcc \
+  php83-simplexml \
   wget \
-  make \
-  libzip-dev \
-  unzip && \
+  unzip \
+  bash && \
   rm -rf /var/lib/apt/lists/*
 
 # Configure nginx - http
-COPY config/nginx.conf /etc/nginx/nginx.conf
+COPY config/nginx/nginx.conf /etc/nginx/nginx.conf
 # Configure nginx - default server
-COPY config/nginx-cms.conf /etc/nginx/conf.d/default.conf
+COPY config/nginx/nginx-cms.conf /etc/nginx/conf.d/default.conf
 
 # Configure PHP-FPM
 ENV PHP_INI_DIR /etc/php83
-COPY config/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
-COPY config/php.ini ${PHP_INI_DIR}/conf.d/custom.ini
+COPY config/php/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
+COPY config/php/php.ini ${PHP_INI_DIR}/conf.d/custom.ini
+
+# Install Composer
+RUN wget https://getcomposer.org/installer -O composer-setup.php && \
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+    rm composer-setup.php
 
 # Configure supervisord
-COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY config/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Make sure files/folders needed by the processes are accessable when they run under the nobody user
+# Download and extract Willow CMS v1.0.8
+ARG WILLOW_VERSION=1.0.8
+RUN curl -L "https://github.com/matthewdeaves/willow/archive/refs/tags/v${WILLOW_VERSION}.zip" -o willow.zip && \
+    unzip willow.zip && \
+    mv willow-${WILLOW_VERSION}/* . && \
+    rm -rf willow-${WILLOW_VERSION} willow.zip
+
+# Copy .env.example to .env
+COPY config/app/env.example config/.env
+RUN sed -i 's/export ARTICLES_CACHE_ENGINE="File"/export ARTICLES_CACHE_ENGINE="Redis"/' config/.env && \
+    sed -i 's/export ARTICLES_INDEX_CACHE_ENGINE="File"/export ARTICLES_INDEX_CACHE_ENGINE="Redis"/' config/.env && \
+    sed -i 's/export DEBUG="true"/export DEBUG="false"/' config/.env
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Install wait-for-it
+ADD https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh /usr/local/bin/wait-for-it.sh
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+# Copy entrypoint script
+COPY config/shell/setup.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/setup.sh
+
+# Make sure files/folders needed by the processes are accessible when they run under the nobody user
 RUN chown -R nobody:nobody /var/www/html /run /var/lib/nginx /var/log/nginx && \
-    mkdir -p /var/lib/nginx/logs && \
-    chown -R nobody:nobody /var/lib/nginx/logs && \
-    chmod -R 755 /var/lib/nginx/logs
+mkdir -p /var/lib/willow && \
+chown -R nobody:nobody /var/lib/willow && \
+chmod -R 755 /var/lib/willow
+
+# Ensure nobody user can access the wait-for-it script
+RUN chown nobody:nobody /usr/local/bin/wait-for-it.sh
 
 # Switch to use a non-root user from here on
 USER nobody
 
-# Add application
-COPY --chown=nobody src/ /var/www/html/
-
 # Expose the port nginx is reachable on
 EXPOSE 80
 
-# Let supervisord start nginx & php-fpm
+# Set entrypoint
+ENTRYPOINT ["/usr/local/bin/setup.sh"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 # Configure a healthcheck to validate that everything is up&running
-HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
+HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:80/fpm-ping || exit 1

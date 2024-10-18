@@ -1,9 +1,8 @@
 services:
 
-  willowcmsserver:
+  willowcms:
     build:
       context: .
       dockerfile: Dockerfile
     ports: 
-      - "8888:80"
-
+      - "80:80"

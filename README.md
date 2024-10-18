@@ -1,0 +1,176 @@
+# Willow CMS Production-Ready Container for AWS AppRunner
+
+This repo provides a rock-solid, secure, and production-ready container setup for deployment of [Willow CMS](https://github.com/matthewdeaves/willow) on AWS AppRunner.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Docker Compose Files](#docker-compose-files)
+   - [Production (`docker-compose.yml`)](#production-docker-composeyml)
+   - [Testing (`docker-compose-test.yml`)](#testing-docker-compose-testyml)
+5. [Nginx Configuration](#nginx-configuration)
+6. [Supervisord Configuration](#supervisord-configuration)
+7. [Security Considerations](#security-considerations)
+8. [Willow CMS Version](#willow-cms-version)
+9. [Useful Commands](#useful-commands)
+10. [Thanks To](#thanks-to)
+
+## Overview
+
+This repository provides a containerized setup for Willow CMS, optimized for deployment on AWS AppRunner. The setup includes:
+
+- **Nginx**: A high-performance web server and reverse proxy.
+- **PHP-FPM**: FastCGI Process Manager for PHP, ensuring efficient handling of PHP requests.
+- **Supervisor**: A process control system for managing long-running processes, including CakePHP queue runners.
+
+## Installation
+
+To get started, clone this repository and ensure you have Docker and Docker Compose installed on your system. Follow the instructions below to set up the environment.
+
+## Configuration
+
+The container uses environment variables for configuration, allowing seamless integration with AWS services like RDS and ElastiCache. The `.env` file is used to configure this.
+
+[env.example](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/app/env.example)
+
+Key configuration points:
+- Database settings for both production and testing environments
+- Redis configuration for caching and session management
+- Email settings
+- Debug mode (disabled by default in production)
+
+## Docker Compose Files
+
+### Production (`docker-compose.yml`)
+
+The production setup includes the following service:
+
+- **WillowCMS**: The main application container, running Nginx and PHP-FPM. It is configured to serve the application on port 80.
+
+```yaml
+services:
+  willowcms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "80:80"
+```
+
+### Testing (`docker-compose-test.yml`)
+
+The testing setup includes additional services for testing the production environment container locally:
+
+- **WillowCMSTest**: Similar to the production container but configured for testing locally with MySQL and Redis.
+- **MySQL**: A MySQL 5.7 database instance for testing purposes.
+- **Redis**: A Redis instance for CakePHP Queues and caching.
+
+```yaml
+services:
+  willowcmstest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "80:80"
+    depends_on:
+      - mysql
+      - redis
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3311:3306"
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    image: redis:latest
+    command: redis-server --requirepass password
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_prod_data:/data
+    expose:
+      - "6380"
+```
+
+## Nginx Configuration
+
+The Nginx configuration for Willow CMS is split into two main files: `nginx-cms.conf` and `nginx.conf`. These files are crucial for setting up the web server and ensuring optimal performance and security.
+
+### `nginx-cms.conf`
+
+This configuration file is specifically tailored for the Willow CMS application. It includes directives that handle the routing of requests to the appropriate application endpoints and ensures that static assets are served efficiently. This file is designed to optimize the performance of the CMS by configuring caching and compression settings.
+
+- **Purpose**: To manage application-specific routing and performance optimizations.
+- **Location**: [nginx-cms.conf](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/nginx/nginx-cms.conf)
+
+### `nginx.conf`
+
+The `nginx.conf` file contains the global configuration settings for the Nginx server. It includes security settings such as disabling server tokens to prevent information leakage, setting up security headers, and configuring logging. This file ensures that the server is secure and operates efficiently under various loads.
+
+- **Purpose**: To define global server settings, including security and logging.
+- **Location**: [nginx.conf](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/nginx/nginx.conf)
+
+### `Nginx Logging`
+
+If you want to delve deeper into Nginx logging best practices for the cloud, read this:
+
+[Detailed Logging ReadMe](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/LOGGINGCONFIG.md)
+
+## Supervisord Configuration
+
+The `supervisord.conf` file manages the processes within the container, including:
+
+- **Nginx**: The web server.
+- **PHP-FPM**: The PHP FastCGI Process Manager.
+- **CakePHP Queue Runners**: Ensures background tasks are processed from CakePHP Queue. See these [jobs](https://github.com/matthewdeaves/willow/tree/main/src/Job).
+
+[supervisord.conf](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/supervisord/supervisord.conf)
+
+This configuration ensures that all necessary services are running and monitored, providing a stable environment for the application.
+
+## Security Considerations
+
+- **Non-Root User**: The container runs processes as a non-root user (`nobody`), enhancing security by minimizing permissions. [Dockerfile](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/Dockerfile)
+- **Environment Variables**: Sensitive information is managed through environment variables, which should be secured and not exposed in production.
+- **Nginx Configuration**: The Nginx setup includes security headers and disables server tokens to prevent information leakage. [nginx.conf](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/nginx/nginx.conf)
+
+## Willow CMS Version
+The Dockerfile for this container setup specifies the version of Willow CMS that is downloaded and installed. This is achieved through the following Docker configuration and will be configurable via the `WILLOW_VERSION` argument:
+
+[DockerFile](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/bcdc433cfda64d9dfac713502d608990ca3a28f5/Dockerfile#L64)
+
+## Useful Commands
+
+Here are some useful Docker Compose commands for working with the containers:
+
+### View the Logs
+
+```bash
+sudo docker-compose logs willowcms
+docker-compose -f docker-compose-test.yml logs willowcmstest
+```
+
+### Rebuild an Image
+
+```bash
+sudo docker-compose build willowcms --progress=plain --no-cache
+docker-compose -f docker-compose-test.yml build willowcmstest --progress=plain --no-cache
+```
+
+### Build the Test Version
+
+```bash
+docker-compose -f docker-compose-test.yml up -d
+```
+
+## Thanks To
+
+Many hours of head banging putting this together where were spared thanks to the fantasic work of Tim de Pater and his [Docker image with PHP-FPM 8.3 & Nginx 1.26 on Alpine Linux](https://hub.docker.com/r/trafex/php-nginx). You should [check him out](https://timdepater.com)
