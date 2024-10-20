@@ -162,13 +162,24 @@ docker-compose -f docker-compose-test.yml logs willowcmstest
 
 ```bash
 sudo docker-compose build willowcms --progress=plain --no-cache
-docker-compose -f docker-compose-test.yml build willowcmstest --progress=plain --no-cache
+
+docker-compose -f docker-compose-test.yml build willowcms --progress=plain --no-cache
 ```
 
-### Build the Test Version
+### Build
 
 ```bash
+docker-compose up -d
+
 docker-compose -f docker-compose-test.yml up -d
+```
+
+### Down
+
+```bash
+docker-compose down -v
+
+docker-compose -f docker-compose-test.yml down -v
 ```
 
 ## Thanks To

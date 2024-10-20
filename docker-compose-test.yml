@@ -1,6 +1,6 @@
 services:
 
-  willowcmstest:
+  willowcms:
     build:
       context: .
       dockerfile: Dockerfile
