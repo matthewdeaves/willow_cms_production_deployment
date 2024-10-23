@@ -7,12 +7,12 @@ FIRST_RUN_FLAG="/var/lib/willow/first_run_completed"
 # Wait for the database to be ready
 /usr/local/bin/wait-for-it.sh mysql:3306 -t 60
 
+# Run migrations
+bin/cake migrations migrate
+
 # Check if this is the first run
 if [ ! -f "$FIRST_RUN_FLAG" ]; then
     echo "First time container startup detected. Running initial setup..."
-
-    # Run migrations
-    bin/cake migrations migrate
 
     # Create default admin user (only if it doesn't exist)
     bin/cake create_user -u admin -p password -e admin@test.com -a 1 || true
