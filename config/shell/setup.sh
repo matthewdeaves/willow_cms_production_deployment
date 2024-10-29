@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# Replace variables in .env file with environment variables
+for var in $(printenv | grep -E '^APP_|^DB_|^EMAIL_|^REDIS_|^CACHE_|^ARTICLES_|^QUEUE_|^SECURITY_'); do
+  sed -i "s/^export ${var}=.*$/export ${var}=\"${!var}\"/" config/.env
+done
+
 # Define the flag file
 FIRST_RUN_FLAG="/var/lib/willow/first_run_completed"
 
