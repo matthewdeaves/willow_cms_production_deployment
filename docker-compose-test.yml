@@ -13,6 +13,32 @@ services:
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
       - WILLOW_ADMIN_EMAIL=admin@example.com
+      - APP_NAME=WillowCMS
+      - DEBUG=true
+      - APP_ENCODING=UTF-8
+      - APP_DEFAULT_LOCALE=en_GB
+      - APP_DEFAULT_TIMEZONE=Europe/London
+      - SECURITY_SALT=8831764ad771299067333a9779c3a9818d0309dbbd797fdcdf175366486ed397
+      - DB_HOST=mysql
+      - DB_USERNAME=cms_user
+      - DB_PASSWORD=password
+      - DB_DATABASE=cms
+      - DB_PORT=3306
+      - EMAIL_HOST=mailhog
+      - EMAIL_PORT=1025
+      - EMAIL_TIMEOUT=30
+      - EMAIL_USERNAME=
+      - EMAIL_PASSWORD=
+      - EMAIL_REPLY=hello@willowcms.app
+      - EMAIL_NOREPLY=noreply@willowcms.app
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_USERNAME=root
+      - REDIS_PASSWORD=password
+      - REDIS_DATABASE=0
+      - CACHE_DURATION=+1 week
+      - ARTICLES_CACHE_ENGINE=Redis
+      - ARTICLES_INDEX_CACHE_ENGINE=Redis
 
   mysql:
     image: mysql:5.7
