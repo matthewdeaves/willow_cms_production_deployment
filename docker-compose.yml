@@ -6,3 +6,7 @@ services:
       dockerfile: Dockerfile
     ports: 
       - "80:80"
+    environment:
+      - CAKEPHP_ADMIN_USERNAME=admin
+      - CAKEPHP_ADMIN_PASSWORD=password
+      - CAKEPHP_ADMIN_EMAIL=admin@example.com
