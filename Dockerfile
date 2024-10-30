@@ -43,6 +43,9 @@ RUN apk add --no-cache \
   bash && \
   rm -rf /var/lib/apt/lists/*
 
+# Configure Redis
+RUN echo "bind 127.0.0.1" >> /etc/redis.conf
+
 # Configure nginx - http
 COPY config/nginx/nginx.conf /etc/nginx/nginx.conf
 # Configure nginx - default server

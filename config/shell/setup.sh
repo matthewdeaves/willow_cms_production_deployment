@@ -10,11 +10,6 @@ if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
     exit 1
 fi
 
-# Create redis.conf file with provided Redis credentials...
-echo "requirepass ${REDIS_SERVER_PASSWORD}" >> /etc/redis.conf && \
-echo "bind 127.0.0.1" >> /etc/redis.conf && \
-echo "user ${REDIS_SERVER_USERNAME} on >${REDIS_SERVER_PASSWORD} ~* +@all" >> /etc/redis.conf
-
 # Wait for the database to be ready
 /usr/local/bin/wait-for-it.sh $DB_HOST:$DB_PORT -t 60
 
