@@ -5,6 +5,7 @@ WORKDIR /var/www/html
 
 # Install packages and remove default server definition
 RUN apk add --no-cache \
+  redis \
   curl \
   imagemagick \
   nginx \
