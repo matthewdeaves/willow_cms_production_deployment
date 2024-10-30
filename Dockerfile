@@ -61,17 +61,15 @@ RUN wget https://getcomposer.org/installer -O composer-setup.php && \
 COPY config/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Download and extract Willow CMS
-ARG WILLOW_VERSION=1.0.19
+ARG WILLOW_VERSION=1.0.22
+
 RUN curl -L "https://github.com/matthewdeaves/willow/archive/refs/tags/v${WILLOW_VERSION}.zip" -o willow.zip && \
     unzip willow.zip && \
     mv willow-${WILLOW_VERSION}/* . && \
     rm -rf willow-${WILLOW_VERSION} willow.zip
 
-# Copy .env.example to .env
-COPY config/app/env.example config/.env
-RUN sed -i 's/export ARTICLES_CACHE_ENGINE="File"/export ARTICLES_CACHE_ENGINE="Redis"/' config/.env && \
-    sed -i 's/export ARTICLES_INDEX_CACHE_ENGINE="File"/export ARTICLES_INDEX_CACHE_ENGINE="Redis"/' config/.env && \
-    sed -i 's/export DEBUG="true"/export DEBUG="false"/' config/.env
+# Copy app_local.php
+COPY config/app/app_local.php config/app_local.php
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader

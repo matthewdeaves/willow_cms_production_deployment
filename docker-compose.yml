@@ -5,13 +5,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports: 
-      - "80:80"
+      - "80:8080"
     environment:
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
       - WILLOW_ADMIN_EMAIL=admin@example.com
       - APP_NAME=WillowCMS
-      - DEBUG=true
+      - DEBUG=false
       - APP_ENCODING=UTF-8
       - APP_DEFAULT_LOCALE=en_GB
       - APP_DEFAULT_TIMEZONE=Europe/London
