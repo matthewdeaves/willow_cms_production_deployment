@@ -19,86 +19,43 @@ This repo provides a rock-solid, secure, and production-ready container setup fo
 
 ## Overview
 
-This repository provides a containerized setup for Willow CMS, optimized for deployment on AWS AppRunner. The setup includes:
+This repository provides a containerized setup for Willow CMS, optimized for deployment on AWS AppRunner. The setup for production includes:
 
+### 1 Willow CMS Container
 - **Nginx**: A high-performance web server and reverse proxy.
 - **PHP-FPM**: FastCGI Process Manager for PHP, ensuring efficient handling of PHP requests.
-- **Supervisor**: A process control system for managing long-running processes, including CakePHP queue runners.
+- **Redis**: An in-memory data structure store used as the back end for CakePHP Queues
+- **Supervisor**: A process control system for managing long-running processes, including CakePHP queue runners, PHP-FPM and nginx.
 
 ## Installation
 
-To get started, clone this repository and ensure you have Docker and Docker Compose installed on your system. Follow the instructions below to set up the environment.
+To get started, clone this repository and ensure you have Docker installed on your system. Follow the instructions below to set up the environment.
 
 ## Configuration
 
-The container uses environment variables for configuration, allowing seamless integration with AWS services like RDS and ElastiCache. The `.env` file is used to configure this.
+The container uses environment variables for configuration, allowing seamless integration with AWS AppRunner. You should set up [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html) and use the example docker-compose file for the bare minimum set of environment variables you need to setup values for.
 
-[env.example](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/app/env.example)
 
-Key configuration points:
-- Database settings for both production and testing environments
-- Redis configuration for caching and session management
-- Email settings
-- Debug mode (disabled by default in production)
+
 
 ## Docker Compose Files
 
-### Production (`docker-compose.yml`)
+### Production (`docker-compose-prod-example.yml`)
 
-The production setup includes the following service:
+This is used to build production images. It will not run on your host machine on docker as it is configured to connecto to a MySQL Server via an environment variable and the docker file has no other containers than `willowcms`.
 
-- **WillowCMS**: The main application container, running Nginx and PHP-FPM. It is configured to serve the application on port 80.
+- **WillowCMS**: The main application container, running Nginx, PHP-FPM, Redis and Supervisord. It is configured to serve the application on port 8080.
 
-```yaml
-services:
-  willowcms:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports: 
-      - "80:80"
-```
+[docker-compose-prod-example.yml](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/docker-compose-prod-example.yml)
 
 ### Testing (`docker-compose-test.yml`)
 
 The testing setup includes additional services for testing the production environment container locally:
 
-- **WillowCMSTest**: Similar to the production container but configured for testing locally with MySQL and Redis.
+- **WillowCMS**: Similar to the production container but configured for testing locally with MySQL.
 - **MySQL**: A MySQL 5.7 database instance for testing purposes.
-- **Redis**: A Redis instance for CakePHP Queues and caching.
 
-```yaml
-services:
-  willowcmstest:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports: 
-      - "80:80"
-    depends_on:
-      - mysql
-      - redis
-
-  mysql:
-    image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-    ports:
-      - "3311:3306"
-    volumes:
-      - mysql_prod_data:/var/lib/mysql
-      - ./config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  redis:
-    image: redis:latest
-    command: redis-server --requirepass password
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_prod_data:/data
-    expose:
-      - "6380"
-```
+[docker-compose-test.yml](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/docker-compose-test.yml)
 
 ## Nginx Configuration
 
@@ -130,6 +87,7 @@ The `supervisord.conf` file manages the processes within the container, includin
 
 - **Nginx**: The web server.
 - **PHP-FPM**: The PHP FastCGI Process Manager.
+- **Redis**: The in-memory data structure store.
 - **CakePHP Queue Runners**: Ensures background tasks are processed from CakePHP Queue. See these [jobs](https://github.com/matthewdeaves/willow/tree/main/src/Job).
 
 [supervisord.conf](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/config/supervisord/supervisord.conf)
