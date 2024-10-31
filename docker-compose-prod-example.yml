@@ -1,0 +1,22 @@
+services:
+
+  willowcms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - "80:8080"
+    # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
+    environment:
+      - REDIS_USERNAME=root
+      - REDIS_PASSWORD=root
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - REDIS_URL=redis://root:root@127.0.0.1:6379/0
+      - SECURITY_SALT=389ur8934vn8934urnv89uidfvnhfg98vyhg785hvb7nghvbsdgvhsfbu
+      - DB_USERNAME=cms_user
+      - DB_PASSWORD=password
+      - DB_DATABASE=cms
+      - WILLOW_ADMIN_USERNAME=admin
+      - WILLOW_ADMIN_PASSWORD=password
+      - WILLOW_ADMIN_EMAIL=admin@test.com
