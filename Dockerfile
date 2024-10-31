@@ -44,7 +44,9 @@ RUN apk add --no-cache \
   rm -rf /var/lib/apt/lists/*
 
 # Configure Redis
-RUN echo "bind 127.0.0.1" >> /etc/redis.conf
+RUN echo "requirepass ${REDIS_PASSWORD}" >> /etc/redis.conf && \
+    echo "bind 127.0.0.1" >> /etc/redis.conf && \
+    echo "user ${REDIS_USERNAME} on >${REDIS_PASSWORD} ~* +@all" >> /etc/redis.conf
 
 # Configure nginx - http
 COPY config/nginx/nginx.conf /etc/nginx/nginx.conf
@@ -65,7 +67,7 @@ RUN wget https://getcomposer.org/installer -O composer-setup.php && \
 COPY config/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Download and extract Willow CMS
-ARG WILLOW_VERSION=1.0.25
+ARG WILLOW_VERSION=1.0.0
 
 RUN curl -L "https://github.com/matthewdeaves/willow/archive/refs/tags/v${WILLOW_VERSION}.zip" -o willow.zip && \
     unzip willow.zip && \

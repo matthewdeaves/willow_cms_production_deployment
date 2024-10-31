@@ -1,8 +1,4 @@
-#!/bin/sh
-set -e
-
-# Define the flag file
-FIRST_RUN_FLAG="/var/lib/willow/first_run_completed"
+#!/bin/bash
 
 # Check if DB_HOST and DB_PORT are set
 if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
@@ -11,14 +7,17 @@ if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
 fi
 
 # Wait for the database to be ready
-/usr/local/bin/wait-for-it.sh $DB_HOST:$DB_PORT -t 60
+/usr/local/bin/wait-for-it.sh $DB_HOST:$DB_PORT -t 20
 
 # Run migrations (always safe since database records which have run)
 bin/cake migrations migrate
 
-# If this is the first run, setup a default user, import default data
-if [ ! -f "$FIRST_RUN_FLAG" ]; then
-    echo "First time container startup detected. Running initial setup..."
+# Check if database has been setup (has a settings table) - database may empty
+$(needs_sudo) docker compose exec willowcms bin/cake check_table_exists settings
+tableExists=$?
+
+if [ "$tableExists" -eq 1 ]; then
+    echo "Running initial setup..."
 
     # Create default admin user (only if it doesn't exist)
     bin/cake create_user -u "$WILLOW_ADMIN_USERNAME" -p "$WILLOW_ADMIN_PASSWORD" -e "$WILLOW_ADMIN_EMAIL" -a 1 || true
@@ -26,14 +25,11 @@ if [ ! -f "$FIRST_RUN_FLAG" ]; then
     # Import default data
     bin/cake default_data_import --all
 
-    # Create the flag file to indicate first run is completed
-    mkdir -p /var/lib/willow && chown -R nobody:nobody /var/lib/willow
-    touch "$FIRST_RUN_FLAG"
-
     echo "Initial setup completed."
-else
-    echo "Subsequent container startup detected. Skipping initial setup."
 fi
+
+# Clear cache
+bin/cake cache clear_all
 
 # Start supervisord
 exec "$@"
