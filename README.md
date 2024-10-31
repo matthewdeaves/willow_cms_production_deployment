@@ -43,13 +43,13 @@ The docker compose files are examples. You'll see they set environment variables
 
 This is used to build production images. It will not run on your host machine on docker as it is configured to connecto to a MySQL Server via an environment variable and the docker file has no other containers than `willowcms`.
 
-- **WillowCMS**: The main application container, running Nginx, PHP-FPM, Redis and Supervisord. It is configured to serve the application on port 8080.
+- **WillowCMS**: The main application container, running Nginx, PHP-FPM, Redis and Supervisord. It is configured to serve the application on port 80 on your host (but won't be useful to you unless you configure the environment variables for MySQL server).
 
 [docker-compose-prod-example.yml](https://github.com/matthewdeaves/willow_cms_production_deployment/blob/main/docker-compose-prod-example.yml)
 
 ### Testing (`docker-compose-test.yml`)
 
-The testing setup includes additional services for testing the production environment container locally:
+The testing setup includes additional services for testing the production environment container locally. It's useful to run the production container with it easily connected to a database. There are two services specified:
 
 - **WillowCMS**: Similar to the production container but configured for testing locally with MySQL.
 - **MySQL**: A MySQL 5.7 database instance for testing purposes.
