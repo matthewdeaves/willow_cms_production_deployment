@@ -1,6 +1,0 @@
-version: 1.0
-runtime: custom
-run:
-  command: /usr/local/bin/setup.sh && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-  network:
-    port: 8080

@@ -21,7 +21,6 @@ if [ ! -f "$FIRST_RUN_FLAG" ]; then
     echo "First time container startup detected. Running initial setup..."
 
     # Create default admin user (only if it doesn't exist)
-    bin/cake create_user -u admin -p password -e admin@test.com -a 1 || true
     bin/cake create_user -u "$WILLOW_ADMIN_USERNAME" -p "$WILLOW_ADMIN_PASSWORD" -e "$WILLOW_ADMIN_EMAIL" -a 1 || true
 
     # Import default data
