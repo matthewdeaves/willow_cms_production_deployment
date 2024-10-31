@@ -9,15 +9,15 @@ fi
 # Wait for the database to be ready
 /usr/local/bin/wait-for-it.sh $DB_HOST:$DB_PORT -t 20
 
-# Run migrations (always safe since database records which have run)
-bin/cake migrations migrate
-
 # Check if database has been setup (has a settings table) - database may empty
-$(needs_sudo) docker compose exec willowcms bin/cake check_table_exists settings
+bin/cake check_table_exists settings
 tableExists=$?
 
 if [ "$tableExists" -eq 1 ]; then
     echo "Running initial setup..."
+
+    # Run migrations (always safe since database records which have run)
+    bin/cake migrations migrate
 
     # Create default admin user (only if it doesn't exist)
     bin/cake create_user -u "$WILLOW_ADMIN_USERNAME" -p "$WILLOW_ADMIN_PASSWORD" -e "$WILLOW_ADMIN_EMAIL" -a 1 || true
