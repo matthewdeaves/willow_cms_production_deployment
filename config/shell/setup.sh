@@ -35,8 +35,5 @@ else
     echo "Subsequent container startup detected. Skipping initial setup."
 fi
 
-# Clear cache (this will run every time)
-bin/cake cache clear_all
-
 # Start supervisord
 exec "$@"

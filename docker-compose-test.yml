@@ -1,6 +1,6 @@
 services:
 
-  willowcms1:
+  willowcms:
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,7 +8,6 @@ services:
       - "80:8080"
     depends_on:
       - mysql
-      - redis
     environment:
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
@@ -49,16 +48,6 @@ services:
     volumes:
       - mysql_prod_data:/var/lib/mysql
       - ./config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-
-  redis:
-    image: redis:latest
-    command: redis-server --requirepass password
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis_prod_data:/data
-    expose:
-      - "6380"
 
 volumes:
   mysql_prod_data:
