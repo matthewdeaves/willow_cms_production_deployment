@@ -20,7 +20,7 @@ services:
       - DB_DATABASE=cms
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
-      - WILLOW_ADMIN_EMAIL=admins@test.com
+      - WILLOW_ADMIN_EMAIL=admin@test.com
 
   mysql:
     image: mysql:5.7

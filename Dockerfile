@@ -43,9 +43,6 @@ RUN apk add --no-cache \
   bash && \
   rm -rf /var/lib/apt/lists/*
 
-# Enable memory overcommit
-RUN echo "vm.overcommit_memory=1" >> /etc/sysctl.conf
-
 # Configure Redis
 RUN echo "requirepass ${REDIS_PASSWORD}" >> /etc/redis.conf && \
     echo "bind 127.0.0.1" >> /etc/redis.conf && \
