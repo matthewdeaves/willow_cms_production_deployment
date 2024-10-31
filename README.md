@@ -35,10 +35,9 @@ To get started, clone this repository and ensure you have Docker installed on yo
 
 The container uses environment variables for configuration, allowing seamless integration with AWS AppRunner. You should set up [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/latest/userguide/intro.html) and use the example docker-compose file for the bare minimum set of environment variables you need to setup values for.
 
-
-
-
 ## Docker Compose Files
+
+The docker compose files are examples. You'll see they set environment variables used through the DockerFile and also the config/shell/setup.sh script. You should create a `docker-compose.yml` locally and use that to build your Willow CMS docker images for production. The `.gitignore` file is set to ignore that file to reduce the risk of comiting to the repo.
 
 ### Production (`docker-compose-prod-example.yml`)
 
