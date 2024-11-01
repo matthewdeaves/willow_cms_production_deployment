@@ -67,7 +67,7 @@ RUN wget https://getcomposer.org/installer -O composer-setup.php && \
 COPY config/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Download and extract Willow CMS
-ARG WILLOW_VERSION=1.0.0
+ARG WILLOW_VERSION=1.0.1
 
 RUN curl -L "https://github.com/matthewdeaves/willow/archive/refs/tags/v${WILLOW_VERSION}.zip" -o willow.zip && \
     unzip willow.zip && \
