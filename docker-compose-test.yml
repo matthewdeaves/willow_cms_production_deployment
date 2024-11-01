@@ -8,6 +8,7 @@ services:
       - "80:8080"
     depends_on:
       - mysql
+    # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
     environment:
       - REDIS_USERNAME=root
       - REDIS_PASSWORD=root
