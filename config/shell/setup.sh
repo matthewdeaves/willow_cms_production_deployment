@@ -18,7 +18,7 @@ if [ "$tableExists" -eq 1 ]; then
 
     # Run migrations (always safe since database records which have run)
     bin/cake migrations migrate
-
+    
     # Create default admin user (only if it doesn't exist)
     bin/cake create_user -u "$WILLOW_ADMIN_USERNAME" -p "$WILLOW_ADMIN_PASSWORD" -e "$WILLOW_ADMIN_EMAIL" -a 1 || true
 
@@ -27,6 +27,9 @@ if [ "$tableExists" -eq 1 ]; then
 
     echo "Initial setup completed."
 fi
+
+# Run migrations (always safe since database records which have run)
+bin/cake migrations migrate
 
 # Clear cache
 bin/cake cache clear_all
