@@ -6,6 +6,8 @@ services:
       dockerfile: config/linode/Dockerfile
     ports: 
       - "80:8080"
+    volumes:
+      - willowcms_uploads:/var/www/html/webroot/files
     # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
     environment:
       - REDIS_USERNAME=root
@@ -24,6 +26,7 @@ services:
   mysql:
     image: mysql:5.7
     environment:
+      # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
       MYSQL_ROOT_PASSWORD: password
     ports:
       - "3311:3306"
@@ -33,3 +36,4 @@ services:
 
 volumes:
   mysql_linode_prod_data:
+  willowcms_uploads:
