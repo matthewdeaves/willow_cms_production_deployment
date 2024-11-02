@@ -1,2 +1,4 @@
 /docker-compose.yml
 /push_image.sh
+/docker-compose-app-runner.yml
+/docker-compose-linode.yml
