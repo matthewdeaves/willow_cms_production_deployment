@@ -49,14 +49,14 @@ RUN echo "requirepass ${REDIS_PASSWORD}" >> /etc/redis.conf && \
     echo "user ${REDIS_USERNAME} on >${REDIS_PASSWORD} ~* +@all" >> /etc/redis.conf
 
 # Configure nginx - http
-COPY config/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY config/linode/nginx/nginx.conf /etc/nginx/nginx.conf
 # Configure nginx - default server
-COPY config/nginx/nginx-cms.conf /etc/nginx/conf.d/default.conf
+COPY config/linode/nginx/nginx-cms.conf /etc/nginx/conf.d/default.conf
 
 # Configure PHP-FPM
 ENV PHP_INI_DIR /etc/php83
-COPY config/php/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
-COPY config/php/php.ini ${PHP_INI_DIR}/conf.d/custom.ini
+COPY config/linode/php/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
+COPY config/linode/php/php.ini ${PHP_INI_DIR}/conf.d/custom.ini
 
 # Install Composer
 RUN wget https://getcomposer.org/installer -O composer-setup.php && \
@@ -64,7 +64,7 @@ RUN wget https://getcomposer.org/installer -O composer-setup.php && \
     rm composer-setup.php
 
 # Configure supervisord
-COPY config/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY config/linode/supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Download and extract Willow CMS
 ARG WILLOW_VERSION=1.0.4
@@ -75,7 +75,7 @@ RUN curl -L "https://github.com/matthewdeaves/willow/archive/refs/tags/v${WILLOW
     rm -rf willow-${WILLOW_VERSION} willow.zip
 
 # Copy app_local.php
-COPY config/app/app_local.php config/app_local.php
+COPY config/linode/app/app_local.php config/app_local.php
 
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
@@ -85,7 +85,7 @@ ADD https://github.com/vishnubob/wait-for-it/raw/master/wait-for-it.sh /usr/loca
 RUN chmod +x /usr/local/bin/wait-for-it.sh
 
 # Copy entrypoint script
-COPY config/shell/setup.sh /usr/local/bin/
+COPY config/linode/shell/setup.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/setup.sh
 
 # Make sure files/folders needed by the processes are accessible when they run under the nobody user

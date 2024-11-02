@@ -1,0 +1,37 @@
+services:
+
+  willowcms:
+    build:
+      context: .
+      dockerfile: config/AppRunner/Dockerfile
+    ports: 
+      - "80:8080"
+    depends_on:
+      - mysql
+    # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
+    environment:
+      - REDIS_USERNAME=root
+      - REDIS_PASSWORD=root
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - REDIS_URL=redis://root:root@127.0.0.1:6379/0
+      - SECURITY_SALT=389ur8934vn8934urnv89uidfvnhfg98vyhg785hvb7nghvbsdgvhsfbu
+      - DB_USERNAME=cms_user
+      - DB_PASSWORD=password
+      - DB_DATABASE=cms
+      - WILLOW_ADMIN_USERNAME=admin
+      - WILLOW_ADMIN_PASSWORD=password
+      - WILLOW_ADMIN_EMAIL=admin@test.com
+
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3311:3306"
+    volumes:
+      - mysql_app_runner_prod_data:/var/lib/mysql
+      - ./config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_app_runner_prod_data:
