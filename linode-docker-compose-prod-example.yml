@@ -8,8 +8,8 @@ services:
       - "80:8080"
     volumes:
       - willowcms_uploads:/var/www/html/webroot/files
-      - /etc/nginx/ssl/willowcms_certificate.crt:/etc/nginx/ssl/willowcmsapp_certificate.crt
-      - /etc/nginx/ssl/willowcms_private.key:/etc/nginx/ssl/willowcmsapp_private.key
+      - /certs/willowcms.app.pem:/certs/willowcms.app.pem
+      - /certs/willowcms.app.key:/certs/willowcms.app.key
     # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
     environment:
       - REDIS_USERNAME=root
