@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: config/linode/Dockerfile
     ports: 
-      - "80:8080"
+      - "443:443"
     volumes:
       - willowcms_uploads:/var/www/html/webroot/files
       - /certs/willowcms.app.pem:/certs/willowcms.app.pem
@@ -16,11 +16,11 @@ services:
       - REDIS_PASSWORD=root
       - DB_HOST=mysql
       - DB_PORT=3306
-      - REDIS_URL=redis://root:root@127.0.0.1:6379/0
-      - SECURITY_SALT=389ur8934vn8934urnv89uidfvnhfg98vyhg785hvb7nghvbsdgvhsfbu
       - DB_USERNAME=cms_user
       - DB_PASSWORD=password
       - DB_DATABASE=cms
+      - REDIS_URL=redis://root:root@127.0.0.1:6379/0
+      - SECURITY_SALT=389ur8934vn8934urnv89uidfvnhfg98vyhg785hvb7nghvbsdgvhsfbu
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
       - WILLOW_ADMIN_EMAIL=admin@test.com
@@ -30,11 +30,13 @@ services:
     environment:
       # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
       MYSQL_ROOT_PASSWORD: password
-    ports:
-      - "3311:3306"
+      DB_USERNAME: cms_user
+      DB_PASSWORD: password
+      DB_DATABASE: cms
     volumes:
       - mysql_linode_prod_data:/var/lib/mysql
-      - ./config/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./config/mysql/generate_init_sql.sh:/scripts/generate_init_sql.sh
+    command: ["/bin/bash", "-c", "chmod +x /scripts/generate_init_sql.sh && /scripts/generate_init_sql.sh && docker-entrypoint.sh mysqld"]
 
 volumes:
   mysql_linode_prod_data:
