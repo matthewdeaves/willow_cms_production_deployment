@@ -21,8 +21,11 @@ restart() {
 # Ask the user for input
 read -p "Do you want to [W]ipe and deploy, [D]eploy or [R]estart the environment? (w/d/r): " choice
 
+# Convert choice to lowercase
+choice=$(echo "$choice" | tr '[:upper:]' '[:lower:]')
+
 # Check user input and execute corresponding command
-case "${choice,,}" in
+case "$choice" in
     w)
         wipe_and_deploy
         ;;
