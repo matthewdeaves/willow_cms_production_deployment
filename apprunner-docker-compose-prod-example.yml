@@ -20,3 +20,4 @@ services:
       - WILLOW_ADMIN_USERNAME=admin
       - WILLOW_ADMIN_PASSWORD=password
       - WILLOW_ADMIN_EMAIL=admin@test.com
+      - WILLOW_VERSION=1.0.8
