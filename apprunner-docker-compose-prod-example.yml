@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: config/AppRunner/Dockerfile
+      args:
+        WILLOW_VERSION: "1.0.8"
     ports: 
       - "80:8080"
     # CHANGE THESE WHEN BUILDING THE IMAGE FOR PRODUCTION TO MATCH SECRETS
