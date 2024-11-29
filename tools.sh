@@ -32,16 +32,17 @@ show_menu() {
     echo "  1) Import Default Data"
     echo "  2) Export Default Data"
     echo "  3) Dump MySQL Database"
+    echo "  4) Load Database from Backup"
     echo
     echo "Internationalization:"
-    echo "  4) Extract i18n Messages"
-    echo "  5) Load Default i18n"
-    echo "  6) Translate i18n"
-    echo "  7) Generate PO Files"
+    echo "  5) Extract i18n Messages"
+    echo "  6) Load Default i18n"
+    echo "  7) Translate i18n"
+    echo "  8) Generate PO Files"
     echo
     echo "System:"
-    echo "  8) Clear Cache"
-    echo "  9) Interactive shell on Willow CMS"
+    echo "  9) Clear Cache"
+    echo "  10) Interactive shell on Willow CMS"
     echo "  0) Exit"
     echo
 }
@@ -66,8 +67,8 @@ execute_command() {
         3)
             echo "Dumping MySQL Database..."
             local timestamp=$(date '+%Y%m%d_%H%M%S')
-            local backup_dir="database/backups"
-            local backup_file="willow_backup_${timestamp}.sql"
+            local backup_dir="/willow/backups"
+            local backup_file="backup_${timestamp}.sql"
             
             # Create backup directory if it doesn't exist
             mkdir -p "${backup_dir}"
@@ -83,27 +84,84 @@ execute_command() {
             fi
             ;;
         4)
+            echo "Loading Database from Backup..."
+            local backup_dir="/willow/backups"
+            
+            # Check if backup directory exists and contains SQL files
+            if [ ! -d "${backup_dir}" ] || [ -z "$(ls -A ${backup_dir}/*.sql 2>/dev/null)" ]; then
+                echo "No backup files found in ${backup_dir}"
+                return 1
+            fi
+            
+            echo "Available backups:"
+            select backup_file in "${backup_dir}"/*.sql; do
+                if [ -n "$backup_file" ]; then
+                    echo "Restoring from $backup_file..."
+                    
+                    # Get database name from environment
+                    DB_NAME=$($(needs_sudo) docker compose exec mysql sh -c 'echo "$DB_DATABASE"')
+                    
+                    echo "This will drop the existing database '$DB_NAME' and restore from backup."
+                    echo "Are you sure you want to continue? (y/n)"
+                    read -r confirm
+                    
+                    if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                        # Drop and recreate database
+                        echo "Dropping and recreating database..."
+                        $(needs_sudo) docker compose exec mysql sh -c '
+                            mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
+                                DROP DATABASE IF EXISTS $DB_DATABASE;
+                                CREATE DATABASE $DB_DATABASE;
+                                USE $DB_DATABASE;
+                            "
+                        '
+                        
+                        # Restore the backup
+                        echo "Restoring backup..."
+                        $(needs_sudo) docker compose exec -T mysql sh -c '
+                            mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$DB_DATABASE"
+                        ' < "$backup_file"
+                        
+                        if [ $? -eq 0 ]; then
+                            echo "Database restored successfully from $backup_file!"
+                            
+                            # Clear CakePHP cache after restore
+                            echo "Clearing CakePHP cache..."
+                            $(needs_sudo) docker compose exec willowcms bin/cake cache clear_all
+                        else
+                            echo "Error: Database restore failed!"
+                        fi
+                    else
+                        echo "Database restore cancelled."
+                    fi
+                    break
+                else
+                    echo "Invalid selection. Please try again."
+                fi
+            done
+            ;;
+        5)
             echo "Extracting i18n Messages..."
             $(needs_sudo) docker compose exec willowcms bin/cake i18n extract \
                 --paths /var/www/html/src,/var/www/html/plugins,/var/www/html/templates
             ;;
-        5)
+        6)
             echo "Loading Default i18n..."
             $(needs_sudo) docker compose exec willowcms bin/cake load_default18n
             ;;
-        6)
+        7)
             echo "Running i18n Translation..."
             $(needs_sudo) docker compose exec willowcms bin/cake translate_i18n
             ;;
-        7)
+        8)
             echo "Generating PO Files..."
             $(needs_sudo) docker compose exec willowcms bin/cake generate_po_files
             ;;
-        8)
+        9)
             echo "Clearing Cache..."
             $(needs_sudo) docker compose exec willowcms bin/cake cache clear_all
             ;;
-        9)
+        10)
             echo "Opening an interactive shell to Willow CMS..."
             $(needs_sudo) docker compose exec -it willowcms /bin/sh
             ;;
@@ -136,10 +194,10 @@ main() {
     while true; do
         show_header
         show_menu
-        read -p "Enter your choice [0-9]: " choice
+        read -p "Enter your choice [0-10]: " choice
         
-        if [[ ! $choice =~ ^[0-9]$ ]]; then
-            echo "Error: Please enter a number between 0 and 9"
+        if [[ ! $choice =~ ^[0-9]+$ ]] || [ "$choice" -gt 10 ]; then
+            echo "Error: Please enter a number between 0 and 10"
             pause
             continue
         fi
