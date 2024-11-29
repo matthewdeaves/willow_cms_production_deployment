@@ -93,33 +93,49 @@ execute_command() {
                 return 1
             fi
             
-            # Create array of backup files
+            # List backups with numbers
             echo "Available backups:"
             echo
             
-            # List backups with numbers
-            backup_files=("${backup_dir}"/*.sql)
-            for i in "${!backup_files[@]}"; do
-                echo "$((i+1))) ${backup_files[i]##*/}"
+            # Create numbered list of backups
+            i=1
+            for file in "${backup_dir}"/*.sql; do
+                echo "$i) $(basename "$file")"
+                i=$((i + 1))
             done
             echo
             
             # Get user selection
             read -p "Enter the number of the backup to restore (or 0 to cancel): " selection
             
-            # Validate input
+            # Validate input is a number
+            if ! echo "$selection" | grep -q '^[0-9]\+$'; then
+                echo "Invalid selection: not a number"
+                return 1
+            fi
+            
+            # Handle cancellation
             if [ "$selection" = "0" ]; then
                 echo "Operation cancelled."
                 return 0
             fi
             
-            if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt "${#backup_files[@]}" ]; then
-                echo "Invalid selection."
+            # Find selected file
+            i=1
+            backup_file=""
+            for file in "${backup_dir}"/*.sql; do
+                if [ "$i" = "$selection" ]; then
+                    backup_file="$file"
+                    break
+                fi
+                i=$((i + 1))
+            done
+            
+            # Validate selection
+            if [ -z "$backup_file" ] || [ ! -f "$backup_file" ]; then
+                echo "Invalid selection: backup file not found"
                 return 1
             fi
-            
-            # Get selected backup file (array is 0-based, so subtract 1 from selection)
-            backup_file="${backup_files[$((selection-1))]}"
             
             echo "Restoring from $backup_file..."
             
@@ -160,6 +176,7 @@ execute_command() {
                 echo "Database restore cancelled."
             fi
             ;;
+
         5)
             echo "Extracting i18n Messages..."
             $(needs_sudo) docker compose exec willowcms bin/cake i18n extract \
