@@ -93,56 +93,72 @@ execute_command() {
                 return 1
             fi
             
+            # Create array of backup files
             echo "Available backups:"
             echo
             
-            # Properly formatted select statement
-            select backup_file in $(ls -1 "${backup_dir}"/*.sql)
-            do
-                if [ -n "$backup_file" ]; then
-                    echo "Restoring from $backup_file..."
-                    
-                    # Get database name from environment
-                    DB_NAME=$($(needs_sudo) docker compose exec mysql sh -c 'echo "$DB_DATABASE"')
-                    
-                    echo "This will drop the existing database '$DB_NAME' and restore from backup."
-                    echo "Are you sure you want to continue? (y/n)"
-                    read -r confirm
-                    
-                    if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
-                        # Drop and recreate database
-                        echo "Dropping and recreating database..."
-                        $(needs_sudo) docker compose exec mysql sh -c '
-                            mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
-                                DROP DATABASE IF EXISTS $DB_DATABASE;
-                                CREATE DATABASE $DB_DATABASE;
-                                USE $DB_DATABASE;
-                            "
-                        '
-                        
-                        # Restore the backup
-                        echo "Restoring backup..."
-                        $(needs_sudo) docker compose exec -T mysql sh -c '
-                            mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$DB_DATABASE"
-                        ' < "$backup_file"
-                        
-                        if [ $? -eq 0 ]; then
-                            echo "Database restored successfully from $backup_file!"
-                            
-                            # Clear CakePHP cache after restore
-                            echo "Clearing CakePHP cache..."
-                            $(needs_sudo) docker compose exec willowcms bin/cake cache clear_all
-                        else
-                            echo "Error: Database restore failed!"
-                        fi
-                    else
-                        echo "Database restore cancelled."
-                    fi
-                    break
-                else
-                    echo "Invalid selection. Please try again."
-                fi
+            # List backups with numbers
+            backup_files=("${backup_dir}"/*.sql)
+            for i in "${!backup_files[@]}"; do
+                echo "$((i+1))) ${backup_files[i]##*/}"
             done
+            echo
+            
+            # Get user selection
+            read -p "Enter the number of the backup to restore (or 0 to cancel): " selection
+            
+            # Validate input
+            if [ "$selection" = "0" ]; then
+                echo "Operation cancelled."
+                return 0
+            fi
+            
+            if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt "${#backup_files[@]}" ]; then
+                echo "Invalid selection."
+                return 1
+            fi
+            
+            # Get selected backup file (array is 0-based, so subtract 1 from selection)
+            backup_file="${backup_files[$((selection-1))]}"
+            
+            echo "Restoring from $backup_file..."
+            
+            # Get database name from environment
+            DB_NAME=$($(needs_sudo) docker compose exec mysql sh -c 'echo "$DB_DATABASE"')
+            
+            echo "This will drop the existing database '$DB_NAME' and restore from backup."
+            echo "Are you sure you want to continue? (y/n)"
+            read -r confirm
+            
+            if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                # Drop and recreate database
+                echo "Dropping and recreating database..."
+                $(needs_sudo) docker compose exec mysql sh -c '
+                    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "
+                        DROP DATABASE IF EXISTS $DB_DATABASE;
+                        CREATE DATABASE $DB_DATABASE;
+                        USE $DB_DATABASE;
+                    "
+                '
+                
+                # Restore the backup
+                echo "Restoring backup..."
+                $(needs_sudo) docker compose exec -T mysql sh -c '
+                    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$DB_DATABASE"
+                ' < "$backup_file"
+                
+                if [ $? -eq 0 ]; then
+                    echo "Database restored successfully from $backup_file!"
+                    
+                    # Clear CakePHP cache after restore
+                    echo "Clearing CakePHP cache..."
+                    $(needs_sudo) docker compose exec willowcms bin/cake cache clear_all
+                else
+                    echo "Error: Database restore failed!"
+                fi
+            else
+                echo "Database restore cancelled."
+            fi
             ;;
         5)
             echo "Extracting i18n Messages..."
