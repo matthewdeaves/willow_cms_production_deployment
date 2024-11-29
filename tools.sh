@@ -94,7 +94,11 @@ execute_command() {
             fi
             
             echo "Available backups:"
-            select backup_file in "${backup_dir}"/*.sql; do
+            echo
+            
+            # Properly formatted select statement
+            select backup_file in $(ls -1 "${backup_dir}"/*.sql)
+            do
                 if [ -n "$backup_file" ]; then
                     echo "Restoring from $backup_file..."
                     
