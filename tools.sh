@@ -43,6 +43,7 @@ show_menu() {
     echo "System:"
     echo "  9) Clear Cache"
     echo "  10) Interactive shell on Willow CMS"
+    echo "  11) Server Update"
     echo "  0) Exit"
     echo
 }
@@ -176,7 +177,6 @@ execute_command() {
                 echo "Database restore cancelled."
             fi
             ;;
-
         5)
             echo "Extracting i18n Messages..."
             $(needs_sudo) docker compose exec willowcms bin/cake i18n extract \
@@ -201,6 +201,35 @@ execute_command() {
         10)
             echo "Opening an interactive shell to Willow CMS..."
             $(needs_sudo) docker compose exec -it willowcms /bin/sh
+            ;;
+        11)
+            echo "Updating server..."
+            echo "This will update the system and clean Docker resources."
+            echo "Are you sure you want to continue? (y/n)"
+            read -r confirm
+            
+            if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+                echo "Updating system packages..."
+                $(needs_sudo) apk update
+                $(needs_sudo) apk upgrade
+                
+                echo "Cleaning Docker resources..."
+                echo "Removing unused containers, networks, and dangling images..."
+                $(needs_sudo) docker system prune -f
+                
+                echo "Removing all unused images..."
+                $(needs_sudo) docker image prune -a -f
+                
+                echo "Removing all stopped containers..."
+                $(needs_sudo) docker container prune -f
+                
+                echo "Removing build cache..."
+                $(needs_sudo) docker builder prune -f
+                
+                echo "Server update completed successfully!"
+            else
+                echo "Server update cancelled."
+            fi
             ;;
         0)
             echo "Exiting..."
@@ -231,10 +260,10 @@ main() {
     while true; do
         show_header
         show_menu
-        read -p "Enter your choice [0-10]: " choice
+        read -p "Enter your choice [0-11]: " choice
         
-        if [[ ! $choice =~ ^[0-9]+$ ]] || [ "$choice" -gt 10 ]; then
-            echo "Error: Please enter a number between 0 and 10"
+        if [[ ! $choice =~ ^[0-9]+$ ]] || [ "$choice" -gt 11 ]; then
+            echo "Error: Please enter a number between 0 and 11"
             pause
             continue
         fi
